@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{강의 제목}}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/* =========================================================
+   kernel-slides · 커널 부트캠프 테마 (bootcamp.kernelacademy.io)
+   색은 전부 :root 토큰. 슬라이드 안에 색 리터럴을 쓰지 않는다.
+   ========================================================= */
+:root{
+  --bg:#fcfdfb; --soft:#f1f6ef; --ink:#1a1c19; --ink2:#53574f; --ink3:#6b7167; --line:#dfe5db;
+  --navy:#16264a; --navy2:#24467f; --blue:#2f6fb0; --green:#3f7350; --asoft:#eef1f6;
+  --pale:#b9c6e0; --pale2:#dfe6f3; --chip:#e8eef6; --onDark:#8fb4e3;
+  --red:#9b3048; --redsoft:#f3d0d8;
+  --backdrop:#0d1628;
+  --r:16px;
+  /* 영상 촬영 모드: 비울 아래 높이, 자막 띠 높이, 얼굴 캠 원의 왼쪽·위·지름(1280×720 기준) */
+  --safe-b:200px; --sub-h:120px; --cam-l:1031px; --cam-t:503px; --cam-d:182px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--backdrop);font-family:Pretendard,-apple-system,"Malgun Gothic",sans-serif;color:var(--ink);
+  line-height:1.6;letter-spacing:-.2px;word-break:keep-all;overflow-wrap:anywhere;overflow:hidden;-webkit-font-smoothing:antialiased}
+em{font-style:normal;color:var(--blue)}
+b,strong{font-weight:700}
+ul,ol{list-style:none}
+a{color:inherit;text-decoration:none}
+
+/* ---------- 캔버스 1280×720 ---------- */
+.deck{position:absolute;left:50%;top:50%;width:1280px;height:720px;transform:translate(-50%,-50%) scale(var(--s,1));transform-origin:center}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;padding:50px 80px 72px;overflow:hidden;
+  background:linear-gradient(180deg,var(--soft) 0,var(--bg) 230px)}
+.slide.on{display:flex}
+.notes{display:none}
+
+/* ---------- 본문 장 머리: 위치·크기 고정 ---------- */
+.eyebrow{font-size:14px;font-weight:700;color:var(--blue);letter-spacing:.4px;margin-bottom:10px;white-space:nowrap}
+.head h2{font-size:40px;line-height:1.28;font-weight:800;letter-spacing:-1.2px}
+.head .sub{font-size:19px;color:var(--ink2);margin-top:10px;max-width:980px}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:20px;padding-top:26px}
+.body.top{justify-content:flex-start}
+
+/* ---------- 푸터(런타임 주입): 강의 제목 | 쪽번호 ---------- */
+.foot{position:absolute;left:80px;right:80px;bottom:26px;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--ink3);letter-spacing:0}
+.foot .by{font-weight:800;color:var(--navy);margin-right:10px}
+.foot .pg{font-weight:700;font-variant-numeric:tabular-nums}
+.section .foot{color:var(--pale)} .section .foot .by{color:#fff}
+
+/* ---------- 표지 ---------- */
+.slide.cover{justify-content:center;background:linear-gradient(180deg,var(--soft) 0%,var(--bg) 78%)}
+.badge{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;background:var(--navy);color:#fff;font-weight:700;font-size:14px;padding:8px 14px;border-radius:8px;white-space:nowrap}
+.badge span{color:var(--pale)}
+.badge.risk{background:var(--red)} .badge.risk span{color:var(--redsoft)}
+.cover h1{font-size:60px;line-height:1.2;font-weight:800;letter-spacing:-1.8px;margin:24px 0 20px}
+.cover .lead{font-size:21px;color:var(--ink2);max-width:780px}
+.meta{display:flex;flex-wrap:wrap;gap:10px 36px;margin-top:34px;font-size:18px;font-weight:600}
+.meta b{color:var(--blue);margin-right:8px}
+
+/* ---------- 부 구분(간지): 제N부 + 제목만 ---------- */
+.slide.section{justify-content:center;background:linear-gradient(110deg,var(--navy) 0%,var(--navy2) 100%);color:#fff}
+.section .n{position:relative;align-self:flex-start;padding-left:22px;font-size:88px;font-weight:800;line-height:1;letter-spacing:-3px;color:var(--onDark);white-space:nowrap;font-variant-numeric:tabular-nums}
+.section .n::before{content:"";position:absolute;left:0;top:8px;width:6px;height:72px;border-radius:3px;background:currentColor}
+.section .part{margin-top:30px;font-size:16px;font-weight:700;color:var(--pale);letter-spacing:.4px;white-space:nowrap}
+.section h2{font-size:56px;line-height:1.25;font-weight:800;letter-spacing:-1.6px;margin-top:10px}
+.section h2 em{color:var(--onDark)}
+.section .sub{font-size:20px;color:var(--pale2);margin-top:18px;max-width:760px}
+
+/* ---------- 한 문장 장 ---------- */
+.slide.statement{justify-content:center;background:linear-gradient(180deg,var(--soft) 0%,var(--bg) 70%)}
+.statement .say{font-size:50px;line-height:1.32;font-weight:800;letter-spacing:-1.5px;padding-left:32px;border-left:6px solid var(--blue)}
+.statement .by{margin-top:24px;padding-left:38px;font-size:20px;color:var(--ink2)}
+
+/* ---------- 마무리 ---------- */
+.slide.closing{justify-content:center;background:linear-gradient(110deg,var(--navy) 0%,var(--navy2) 100%);color:#fff}
+.closing h2{font-size:52px;line-height:1.25;font-weight:800;letter-spacing:-1.5px}
+.closing h2 em{color:var(--onDark)}
+.closing .sub{font-size:20px;color:var(--pale2);margin-top:18px;max-width:760px}
+.cta{display:flex;align-items:center;gap:18px;margin-top:40px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;min-height:52px;background:#fff;color:var(--navy);font-weight:700;font-size:18px;padding:14px 28px;border-radius:12px;white-space:nowrap}
+.btn.soft{background:var(--chip)}
+.cta .note{font-size:15px;color:var(--pale)}
+.closing .by{margin-top:56px;font-size:15px;color:var(--pale)}
+.closing .by b{color:#fff;margin-right:8px}
+
+/* ---------- 핵심 메시지 장은 화면 가운데 ---------- */
+.slide.cover,.slide.section,.slide.statement,.slide.closing{align-items:center;text-align:center}
+.cover .badge{align-self:center}
+.cover .lead,.section .sub,.closing .sub{margin-left:auto;margin-right:auto}
+.meta,.cta{justify-content:center}
+.section .n{align-self:center;padding-left:0}
+.section .n::before{display:none}
+.section .n::after{content:"";display:block;width:48px;height:5px;border-radius:3px;background:var(--onDark);margin:22px auto 0}
+.statement .say{padding-left:0;border-left:0}
+.statement .say::before{content:"";display:block;width:56px;height:5px;border-radius:3px;background:var(--blue);margin:0 auto 30px}
+.statement .by{padding-left:0}
+.cover h1,.section h2,.statement .say,.closing h2{white-space:nowrap}
+.slide.cover h1{margin:0}
+
+/* =========================================================
+   본문 부품(.body 안)
+   ========================================================= */
+.k{font-size:14px;font-weight:700;color:var(--blue);margin-bottom:8px;white-space:nowrap}
+h3{font-size:23px;font-weight:800;letter-spacing:-.5px;line-height:1.35}
+:where(.body) :where(p,li,td){font-size:18px}
+
+/* 단계: 3~5칸 가로 흐름 */
+.steps{display:grid;grid-template-columns:repeat(var(--cols,3),1fr);gap:20px}
+.step{position:relative;min-height:210px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:30px 28px}
+.step .n{font-size:14px;font-weight:800;color:var(--blue);white-space:nowrap;font-variant-numeric:tabular-nums}
+.step h3{margin:10px 0 8px}
+.step p{color:var(--ink2)}
+.steps.flow .step:not(:last-child)::after{content:"";position:absolute;right:-15px;top:50%;width:9px;height:9px;border-top:2px solid var(--ink3);border-right:2px solid var(--ink3);transform:translateY(-50%) rotate(45deg)}
+
+/* 비교: 좌우 2단(오른쪽이 답이면 .dark) */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:stretch}
+.pane{min-height:230px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:34px 36px}
+.pane .k{color:var(--ink3)}
+.pane h3{font-size:26px;letter-spacing:-.6px;margin-bottom:12px}
+.pane p{color:var(--ink2)}
+.pane.dark{background:linear-gradient(110deg,var(--navy),var(--navy2));border-color:var(--navy);color:#fff}
+.pane.dark .k{color:var(--pale)} .pane.dark p,.pane.dark li{color:var(--pale2)} .pane.dark em{color:var(--onDark)}
+
+/* 목록 부호 */
+.dots li{position:relative;padding:5px 0 5px 20px;color:var(--ink2)}
+.dots li::before{content:"";position:absolute;left:2px;top:17px;width:6px;height:6px;border-radius:50%;background:var(--blue)}
+.dark .dots li::before{background:var(--onDark)}
+.checks li{position:relative;padding:7px 0 7px 32px;color:var(--ink2)}
+.checks li::before{content:"✓";position:absolute;left:4px;top:6px;color:var(--green);font-weight:800}
+.checks li b,.dots li b{color:var(--ink)}
+.dark .checks li b,.dark .dots li b{color:#fff}
+
+/* 카드: 2~3장 */
+.cards{display:grid;grid-template-columns:repeat(var(--cols,3),1fr);gap:18px;align-items:stretch}
+.card{display:flex;flex-direction:column;min-height:210px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:30px 28px 26px}
+.card h3{margin-bottom:8px}
+.card .k{color:var(--blue)}
+.card p,.card li{color:var(--ink2);line-height:1.7}
+.tag{align-self:flex-start;display:inline-block;margin-top:auto;background:var(--asoft);color:var(--navy);font-size:13px;font-weight:700;padding:5px 10px;border-radius:6px;white-space:nowrap}
+.card>.tag{margin-top:auto}
+.card>p+.tag,.card>ul+.tag{margin-top:16px}
+.card .ba{border-top:1px solid var(--line);margin-top:16px;padding-top:14px}
+.card .ba .k{color:var(--ink3);font-size:13px;margin-bottom:2px}
+.card.dark{background:var(--navy);border-color:var(--navy);color:#fff}
+.card.dark p,.card.dark li{color:var(--pale2)} .card.dark .k{color:var(--pale)}
+.card.dark .tag{background:rgba(255,255,255,.14);color:#fff} .card.dark .ba{border-color:rgba(255,255,255,.2)}
+
+/* 줄 목록: 목차·커리큘럼 (사이트 .sess) */
+.rows{border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:92px 1fr;gap:18px;padding:17px 0;border-bottom:1px solid var(--line)}
+.row .n{position:relative;padding-left:16px;font-size:27px;font-weight:800;line-height:1.2;color:var(--blue);white-space:nowrap;font-variant-numeric:tabular-nums}
+.row .n::before{content:"";position:absolute;left:0;top:5px;width:4px;height:25px;border-radius:2px;background:currentColor}
+.row h3{font-size:22px;margin-bottom:2px}
+.row p{font-size:17px;color:var(--ink2)}
+.row .out{margin-top:4px;font-size:14px;color:var(--ink3)} .row .out b{color:var(--blue);margin-right:6px}
+.row.now .n{color:var(--navy)} .row.now h3{color:var(--navy)}
+.row.dim h3,.row.dim p{color:var(--ink3)} .row.dim .n{color:var(--line)}
+
+/* 말 + 목록: 왼쪽 한 문장, 오른쪽 질문·항목 */
+.split{display:grid;grid-template-columns:1.05fr 1fr;gap:60px;align-items:center}
+.split .say{font-size:42px;line-height:1.3;font-weight:800;letter-spacing:-1.2px}
+.split .say+p{font-size:19px;color:var(--ink2);margin-top:16px}
+.qlist{border-top:1px solid var(--line)}
+.qlist li{position:relative;border-bottom:1px solid var(--line);padding:19px 0 19px 38px;font-size:21px;font-weight:700;color:var(--ink)}
+.qlist li::before{content:"Q";position:absolute;left:2px;top:19px;color:var(--blue);font-weight:800}
+.qlist li span{display:block;font-size:16px;font-weight:500;color:var(--ink3);margin-top:2px}
+
+/* 숫자 하나: 한 장에 하나, 출처 필수 */
+.fact{display:grid;grid-template-columns:auto 1fr;gap:56px;align-items:center;min-height:250px;padding:36px 44px;background:#fff;border:1px solid var(--line);border-radius:18px}
+.fact .v{font-size:112px;font-weight:800;line-height:1;letter-spacing:-4px;color:var(--navy);white-space:nowrap;font-variant-numeric:tabular-nums}
+.fact .v small{font-size:32px;letter-spacing:-.5px;color:var(--ink3);font-weight:700;margin-left:6px}
+.fact h3{font-size:26px;margin-bottom:10px}
+.fact p{color:var(--ink2)}
+.src{font-size:13.5px;color:var(--ink3)}
+.src a{text-decoration:underline;text-underline-offset:3px}
+
+/* 2×2 라벨 + 설명 (사이트 .fix) */
+.fix{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fix>div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px 26px}
+.fix>div b{display:block;color:var(--blue);font-size:14px;margin-bottom:6px;white-space:nowrap}
+.fix>div p{color:var(--ink)}
+
+/* 표 */
+.tblw{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:14px;font-weight:700;color:var(--ink3);text-align:left;padding:13px 22px;background:var(--soft);border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:13px 22px;border-bottom:1px solid var(--line);color:var(--ink2);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td:first-child{color:var(--ink);font-weight:700}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl tr.hl td{background:var(--asoft);color:var(--navy);font-weight:700}
+
+/* 강사 소개 */
+.whos{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.who{display:flex;gap:22px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:28px 30px}
+.who img{width:96px;height:96px;border-radius:14px;object-fit:cover;flex:none;background:var(--soft)}
+.who .k{margin-bottom:2px}
+.who .nm{font-size:26px;font-weight:800;letter-spacing:-.6px;margin-bottom:10px}
+.who li{font-size:16px!important;color:var(--ink2);padding:2px 0}
+.who li b{display:inline-block;width:30px;color:var(--blue)}
+.who .k2{margin-top:12px;font-size:13px;font-weight:700;color:var(--blue)}
+.who .k2+ul li{font-size:15px!important;color:var(--ink3)}
+
+/* 결론 띠: 장 아래쪽 한 줄 결론 */
+.box{background:linear-gradient(100deg,var(--navy),var(--navy2));color:#fff;border-radius:var(--r);padding:22px 30px;font-size:19px;font-weight:600;line-height:1.6}
+.box em{color:var(--onDark)}
+.slide>.box{margin-top:18px}
+
+/* 강조 경고(드물게) */
+.risk-t{color:var(--red);font-weight:700}
+
+/* =========================================================
+   움직임
+   ========================================================= */
+.slide.enter .head,.slide.enter .body>*,.slide.enter>.box,
+.slide.enter.cover>*,.slide.enter.section>*,.slide.enter.statement>*,.slide.enter.closing>*{animation:up .5s cubic-bezier(.2,.7,.2,1) both}
+.slide.enter .body>*:nth-child(2),.slide.enter>*:nth-child(2){animation-delay:.07s}
+.slide.enter .body>*:nth-child(3),.slide.enter>*:nth-child(3){animation-delay:.14s}
+.slide.enter .body>*:nth-child(4),.slide.enter>*:nth-child(4){animation-delay:.21s}
+.slide.enter>.box{animation-delay:.24s}
+@keyframes up{from{opacity:0;transform:translateY(14px)}}
+[data-step]{transition:opacity .35s,transform .35s}
+[data-step]:not(.shown){opacity:0;transform:translateY(10px)}
+body.all [data-step]{opacity:1!important;transform:none!important}
+body.static *,body.static *::after{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* =========================================================
+   발표 도구(런타임 주입, 저장본에는 남지 않음)
+   ========================================================= */
+.ctl{position:fixed;right:18px;bottom:18px;z-index:50;display:flex;align-items:center;gap:4px;padding:6px;border-radius:12px;background:rgba(13,22,40,.88);backdrop-filter:blur(8px);transition:opacity .25s}
+.ctl button{background:none;border:0;color:var(--pale2);font:600 13px Pretendard,sans-serif;padding:8px 10px;border-radius:8px;cursor:pointer}
+.ctl button:hover{background:rgba(255,255,255,.12);color:#fff}
+.ctl .cnt{color:#fff;font:700 13px Pretendard,sans-serif;padding:0 8px;font-variant-numeric:tabular-nums}
+.ctl kbd{margin-left:6px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.12);color:var(--pale);font:700 11px Pretendard,sans-serif;letter-spacing:0}
+.ctl .sep{width:1px;height:18px;margin:0 4px;background:rgba(255,255,255,.18)}
+.ctl .hp{font-weight:800;min-width:30px}
+body.keys-on .ctl .hp{color:#fff;background:var(--blue)}
+.keypanel{position:fixed;right:18px;bottom:70px;z-index:52;display:none;width:430px;padding:18px 20px 16px;border-radius:14px;background:rgba(13,22,40,.95);backdrop-filter:blur(8px);color:var(--pale2);font:500 13px/1.5 Pretendard,sans-serif;letter-spacing:0}
+body.keys-on .keypanel{display:block}
+.keypanel .kt{font-weight:800;color:#fff;font-size:14px;margin-bottom:10px}
+.keypanel dl{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;align-items:center}
+.keypanel dt{white-space:nowrap} .keypanel dd{color:var(--pale2)}
+.keypanel kbd{display:inline-block;padding:1px 7px;border-radius:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:#fff;font:700 12px Pretendard,sans-serif}
+body.idle .ctl{opacity:0;pointer-events:none} body.idle{cursor:none}
+.notesbar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:none;max-height:36vh;overflow:auto;padding:20px 32px 72px;background:rgba(13,22,40,.96);color:var(--asoft);font-size:19px;line-height:1.75;border-top:1px solid rgba(255,255,255,.1)}
+.notesbar:empty::before{content:"이 장에는 노트가 없습니다.";color:var(--ink3)}
+body.show-notes .notesbar{display:block}
+.ov{position:fixed;inset:0;z-index:60;display:none;overflow:auto;padding:32px;background:var(--backdrop);grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;align-content:start}
+body.overview .ov{display:grid}
+.ov .th{position:relative;aspect-ratio:16/9;border-radius:8px;overflow:hidden;cursor:pointer;outline:2px solid transparent;outline-offset:2px}
+.ov .th.cur{outline-color:var(--onDark)}
+.ov .th .slide{display:flex;inset:auto;left:0;top:0;width:1280px;height:720px;transform:scale(var(--ts));transform-origin:0 0}
+.ov .th i{position:absolute;right:8px;bottom:6px;font:700 12px Pretendard,sans-serif;font-style:normal;color:#fff;background:rgba(13,22,40,.8);padding:2px 7px;border-radius:6px}
+/* 펜·레이저(런타임) */
+.ink{position:absolute;left:0;top:0;width:1280px;height:720px;z-index:5;pointer-events:none;touch-action:none}
+body.pen .ink{pointer-events:auto;cursor:crosshair}
+body.pen.idle{cursor:crosshair}
+body.pen .ctl .pn{color:#fff;background:var(--pc,var(--red))}
+.laserdot{position:fixed;left:-100px;top:-100px;z-index:70;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#ff3b3f;box-shadow:0 0 0 5px rgba(255,59,63,.30),0 0 22px 8px rgba(255,59,63,.55);pointer-events:none;display:none}
+body.laser-on .laserdot{display:block} body.laser-on,body.laser-on.idle,body.laser-on .ink{cursor:none}
+body.laser-on .ctl .ls{color:#fff;background:#e5383b}
+.inkhint{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:55;display:none;padding:8px 14px;border-radius:10px;background:rgba(13,22,40,.88);color:var(--pale2);font:600 13px Pretendard,sans-serif;white-space:nowrap}
+.inkhint b{color:#fff}
+body.pen .inkhint,.inkhint.starthint{display:block} body.pen.idle .inkhint{display:none}
+body.editing .deck [contenteditable]:hover{outline:1px dashed var(--blue);outline-offset:3px}
+body.editing .ctl .ed{color:#fff;background:var(--blue)}
+
+/* 영상 촬영 모드(body data-video="on"): 아래 200px 는 자막·얼굴 캠 자리로 비운다 */
+body[data-video="on"] .slide{padding-top:44px;padding-bottom:var(--safe-b)}
+body[data-video="on"] .foot{display:none}
+body[data-video="on"] .row{padding:11px 0}
+.safeguide{position:absolute;inset:0;z-index:6;pointer-events:none;display:none}
+body.guide-on .safeguide{display:block}
+.safeguide .sub-band{position:absolute;left:0;right:0;bottom:0;height:var(--sub-h);border-top:2px dashed #e5383b;background:rgba(229,56,59,.07)}
+.safeguide .cam{position:absolute;left:var(--cam-l);top:var(--cam-t);width:var(--cam-d);height:var(--cam-d);border-radius:50%;border:2px dashed #e5383b;background:rgba(229,56,59,.10)}
+.safeguide span{position:absolute;font:700 13px Pretendard,sans-serif;color:#e5383b}
+.safeguide .sub-band span{left:80px;top:10px} .safeguide .cam span{left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap}
+
+/* 인쇄·PDF: 한 장 = 한 쪽 */
+@media print{
+  @page{size:1280px 720px;margin:0}
+  html,body{height:auto;overflow:visible;background:none}
+  .deck{position:static;transform:none;width:1280px;height:auto}
+  .slide{position:relative;display:flex!important;width:1280px;height:720px;break-after:page;page-break-after:always}
+  .ctl,.notesbar,.ov,.ink,.laserdot,.inkhint,.keypanel,.safeguide{display:none!important}
+  [data-step]{opacity:1!important;transform:none!important}
+  *{animation:none!important}
+}
+</style>
+</head>
+<body data-video="on" data-label="{{강의 제목(푸터용 짧게)}}" >
+<div class="deck">
+
+<!-- ================= 예시 장. 전부 지우고 설계한 장으로 채운다 ================= -->
+
+<!-- 표지: 제목 한 줄만 -->
+<section class="slide cover">
+  <h1>AI를 배웠는데, 왜 내 업무엔 <em>안 붙을까</em></h1>
+  <aside class="notes">표지에서 할 말. 녹화 대본이면 여기에 그대로 적는다.</aside>
+</section>
+
+<!-- 부 구분 -->
+<section class="slide section">
+  <p class="n">01</p>
+  <p class="part">제1부</p>
+  <h2>적용이 어려운 이유</h2>
+  <aside class="notes">간지 노트.</aside>
+</section>
+
+<!-- 한 문장 -->
+<section class="slide statement">
+  <p class="say">“그냥 내가 하는 게 <em>더 빠르겠다.</em>”</p>
+  <p class="by">AI를 몇 번 써 본 회계사가 가장 많이 하는 말</p>
+</section>
+
+<!-- 단계 -->
+<section class="slide">
+  <header class="head">
+    <p class="eyebrow">업무 한 건 처리하기</p>
+    <h2>자료 준비부터 수정까지 <em>한 번에 이어서</em> 해 봅니다</h2>
+    <p class="sub">각 단계에서 막히는 지점을 실습 중에 확인합니다</p>
+  </header>
+  <div class="body">
+    <div class="steps flow" style="--cols:4">
+      <div class="step" data-step="1"><p class="n">1단계</p><h3>자료 준비</h3><p>업무에 필요한 파일을 한 폴더에 모읍니다</p></div>
+      <div class="step" data-step="2"><p class="n">2단계</p><h3>작업 지시</h3><p>처리 기준과 결과 형식을 적어 줍니다</p></div>
+      <div class="step" data-step="3"><p class="n">3단계</p><h3>결과 대조</h3><p>원본 숫자와 결과를 맞춰 봅니다</p></div>
+      <div class="step" data-step="4"><p class="n">4단계</p><h3>수정 후 재실행</h3><p>틀린 기준을 고쳐 다시 돌립니다</p></div>
+    </div>
+  </div>
+  <div class="box">결과를 대조하고 고쳐 본 경험이 있어야 <em>다음 업무에도 혼자 적용</em>할 수 있습니다.</div>
+</section>
+
+<!-- 비교 -->
+<section class="slide">
+  <header class="head">
+    <p class="eyebrow">도구와 업무 사이</p>
+    <h2>기능 목록만으로는 <em>맡길 일</em>이 정해지지 않습니다</h2>
+  </header>
+  <div class="body">
+    <div class="duo">
+      <div class="pane"><p class="k">도구 소개에서 보이는 것</p><h3>요약·검색·정리 기능</h3><ul class="dots"><li>무엇을 할 수 있는지는 압니다</li><li>예제는 개발 업무 위주입니다</li></ul></div>
+      <div class="pane dark"><p class="k">업무에 필요한 것</p><h3>이번 달 맡길 <em>작업 한 건</em></h3><ul class="dots"><li>어떤 자료를 넣을지</li><li>어디까지 맡기고 무엇을 검토할지</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- 카드 -->
+<section class="slide">
+  <header class="head">
+    <p class="eyebrow">막히는 지점</p>
+    <h2>내 파일을 여는 순간 질문이 생깁니다</h2>
+  </header>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><p class="k">자료</p><h3>어떤 파일을 넣나</h3><p>원장, 증빙, 전기 자료 중 무엇이 필요한지 정해야 합니다</p><span class="tag">입력</span></div>
+      <div class="card"><p class="k">기준</p><h3>처리 기준을 어떻게 쓰나</h3><p>머릿속 기준을 문장으로 옮겨야 AI가 따라옵니다</p><span class="tag">지시</span></div>
+      <div class="card dark"><p class="k">검토</p><h3>틀리면 어디를 고치나</h3><p>결과가 틀렸을 때 자료와 지시 중 무엇이 원인인지 가립니다</p><span class="tag">수정</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 목차·커리큘럼 -->
+<section class="slide">
+  <header class="head">
+    <p class="eyebrow">커리큘럼</p>
+    <h2>다섯 세션, <em>세션마다 산출물 하나</em></h2>
+  </header>
+  <div class="body">
+    <div class="rows">
+      <div class="row"><p class="n">01</p><div><h3>기본개념 및 에이전트 활용</h3><p class="out"><b>산출물</b>회계 자문 스킬 · CLAUDE.md</p></div></div>
+      <div class="row now"><p class="n">02</p><div><h3>결산 자동화와 현금흐름표</h3><p class="out"><b>산출물</b>더존 업로드 파일 · 현금흐름표</p></div></div>
+      <div class="row dim"><p class="n">03</p><div><h3>산출물 자동 검증 및 부가세 신고</h3><p class="out"><b>산출물</b>부가세 신고서 집계 · 리뷰 스킬</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 말 + 질문 -->
+<section class="slide">
+  <header class="head">
+    <p class="eyebrow">첫 지시</p>
+    <h2>한 줄 지시로는 <em>무엇을 더 줘야 할지</em> 모릅니다</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div><p class="say">“월결산을<br>자동화해줘.”</p><p>이 한 줄 뒤에 답해야 할 질문이 세 개 남습니다</p></div>
+      <ul class="qlist">
+        <li>어떤 자료를 줄까?<span>원장·통장·카드 내역의 범위</span></li>
+        <li>어디까지 맡길까?<span>분개까지인지, 업로드 파일까지인지</span></li>
+        <li>어떤 파일이 나와야 할까?<span>검토할 사람이 받을 형식</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 숫자 하나 -->
+<section class="slide">
+  <header class="head">
+    <p class="eyebrow">지난 기수 결과</p>
+    <h2>수강생 23명의 만족도는 <em>5점 만점에 4.6점</em>이었습니다</h2>
+  </header>
+  <div class="body">
+    <div class="fact">
+      <p class="v">4.6<small>/ 5</small></p>
+      <div><h3>한공회 3일 부트캠프 설문</h3><p>응답자 23명, 전체 만족도 평균</p><p class="src" style="margin-top:14px">출처: 한공회 부트캠프 수강생 설문(2026)</p></div>
+    </div>
+  </div>
+  <div class="box">숫자 장은 비기 쉽다. 숫자가 뜻하는 바를 <em>결론 띠 한 줄</em>로 묶는다.</div>
+</section>
+
+<!-- 2×2 -->
+<section class="slide">
+  <header class="head">
+    <p class="eyebrow">실습 중 피드백</p>
+    <h2>막히면 강사가 화면을 보고 바로 짚습니다</h2>
+  </header>
+  <div class="body">
+    <div class="fix">
+      <div><b>자료 연결</b><p>파일이 제대로 읽혔는지 확인합니다</p></div>
+      <div><b>지시 문장</b><p>모호한 표현을 기준 문장으로 바꿉니다</p></div>
+      <div><b>검토 기준</b><p>결과에서 대조할 숫자를 정합니다</p></div>
+      <div><b>재실행</b><p>고친 뒤 같은 자료로 다시 돌립니다</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 표 -->
+<section class="slide">
+  <header class="head">
+    <p class="eyebrow">시간 비교</p>
+    <h2>반복 업무일수록 <em>줄어드는 시간</em>이 큽니다</h2>
+  </header>
+  <div class="body">
+    <div class="tblw"><table class="tbl">
+      <tr><th>업무</th><th>기존 방식</th><th class="num">기존</th><th class="num">AI 활용</th></tr>
+      <tr><td>매입매출 집계</td><td>엑셀 수작업</td><td class="num">{{값}}</td><td class="num">{{값}}</td></tr>
+      <tr class="hl"><td>더존 업로드 파일</td><td>전표 직접 입력</td><td class="num">{{값}}</td><td class="num">{{값}}</td></tr>
+      <tr><td>고객 보고서</td><td>한글 문서 작성</td><td class="num">{{값}}</td><td class="num">{{값}}</td></tr>
+    </table></div>
+    <p class="src">표의 숫자는 원문에 있을 때만 쓴다. 없으면 이 장을 만들지 않는다.</p>
+  </div>
+</section>
+
+<!-- 강사 소개 -->
+<section class="slide">
+  <header class="head">
+    <p class="eyebrow">강사 소개</p>
+    <h2>회계·세무 실무와 AI 적용 경험을 함께 전합니다</h2>
+  </header>
+  <div class="body">
+    <div class="whos">
+      <div class="who"><div><p class="k">공인회계사</p><p class="nm">박상정</p><ul><li><b>現</b>커널스페이스 대표</li><li><b>前</b>스타트업 CFO · 법무법인 세종</li><li>연세대학교 경영학과 졸업</li></ul><p class="k2">AI·업무 시스템</p><ul><li>재무인을 위한 AI 스프레드시트 Gridie 런칭</li></ul></div></div>
+      <div class="who"><div><p class="k">공인회계사</p><p class="nm">박민수</p><ul><li><b>現</b>안세회계법인 파트너</li><li><b>前</b>삼일회계법인 조세본부</li><li>서울대학교 경영학과 졸업</li></ul><p class="k2">세무·AI 적용</p><ul><li>국세청 글로벌최저한세 홈택스 전산시스템 설계</li></ul></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 마무리 -->
+<section class="slide closing">
+  <h2>AI를 배웠다면, <em>업무 한 건을 끝까지</em></h2>
+  <p class="sub">혼자 멈췄던 지점부터 함께 실행하고 고칩니다</p>
+  <div class="cta"><a class="btn" href="https://bootcamp.kernelacademy.io/" target="_blank" rel="noopener">다음 회차 알림받기(오픈카톡 입장)</a><span class="note">영상 설명란 링크</span></div>
+  <p class="by"><b>박민수 회계사</b>안세회계법인</p>
+</section>
+
+</div>
+
+<script>
+/* kernel-slides runtime — 손대지 않는다 */
+(()=>{
+const W=1280,H=720, body=document.body, deck=document.querySelector('.deck');
+const slides=[...deck.children].filter(e=>e.classList.contains('slide'));
+const N=slides.length, mode=location.hash.slice(1);
+const pad=n=>String(n).padStart(2,'0');
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const isFull=s=>['cover','section','statement','closing'].some(c=>s.classList.contains(c));
+const label=body.dataset.label||document.title, by=body.dataset.by||'';
+const rt=el=>{el.setAttribute('data-rt','');return el};
+
+slides.forEach((s,i)=>{
+  if(s.dataset.foot==='off'||s.classList.contains('cover')||s.classList.contains('closing'))return;
+  const f=rt(document.createElement('div'));f.className='foot';
+  f.innerHTML=`<span>${esc(label)}</span><span class="pg">${pad(i+1)} / ${pad(N)}</span>`;
+  s.appendChild(f);
+});
+
+/* 핵심 메시지 제목은 줄바꿈 없이 한 줄. 캔버스 폭(1120px)을 넘으면 글자를 줄여 맞춘다(최소 34px) */
+const KEY='.cover h1,.section h2,.statement .say,.closing h2';
+function fitKeys(){
+  slides.forEach(s=>{
+    const els=s.querySelectorAll(KEY); if(!els.length)return;
+    const was=s.style.cssText; s.style.display='flex'; s.style.visibility='hidden';
+    els.forEach(e=>{e.style.fontSize='';let fs=parseFloat(getComputedStyle(e).fontSize);
+      while(e.scrollWidth>1120&&fs>34){fs-=1;e.style.fontSize=fs+'px'}});
+    s.style.cssText=was;
+  });
+}
+fitKeys(); if(document.fonts)document.fonts.ready.then(fitKeys);
+let cur=0;
+function fit(){
+  const h=body.classList.contains('show-notes')?innerHeight*.64:innerHeight;
+  const s=Math.min(innerWidth/W,h/H);
+  deck.style.setProperty('--s',s); deck.style.top=(h/2)+'px';
+}
+const ctl=rt(document.createElement('div'));ctl.className='ctl';
+ctl.innerHTML='<button data-a="prev" title="이전">←</button><span class="cnt"></span><button data-a="next" title="다음">→</button><i class="sep"></i><button class="pn" data-a="pen">펜<kbd>D</kbd></button><button class="ls" data-a="laser">레이저<kbd>L</kbd></button><button data-a="notes">노트<kbd>N</kbd></button><button data-a="grid">전체 보기<kbd>G</kbd></button><button data-a="full"><span class="lb">전체화면</span><kbd>F</kbd></button><button class="ed" data-a="edit">편집<kbd>E</kbd></button><button class="hp" data-a="help" title="단축키 전체">?</button>';
+const notesbar=rt(document.createElement('div'));notesbar.className='notesbar';
+const keypanel=rt(document.createElement('div'));keypanel.className='keypanel';
+keypanel.innerHTML='<p class="kt">단축키</p><dl>'+[
+ ['→ · Space · Enter','다음 (단계 공개 먼저)'],['← · Backspace','이전'],['Home · End','처음 · 끝'],
+ ['F · F5 · 더블클릭','전체화면'],['D','펜 켜기·끄기'],['1 ~ 5','펜 색: 빨강·파랑·초록·네이비·형광펜'],
+ ['Z · Ctrl+Z','펜 되돌리기'],['C','이 장 그림 지우기'],['L','레이저 포인터'],['N','발표 노트'],['G','전체 보기'],
+ ['E','편집(글자 고치기) · Esc 로 끝'],['Ctrl+S','고친 상태를 새 파일로 저장'],['V','자막·얼굴 캠 자리 안내선'],['? · H','이 표 열기·닫기'],['Esc','펜·레이저·표·편집 닫기']
+].map(([k,v])=>`<dt>${k.split(' · ').map(x=>`<kbd>${x}</kbd>`).join(' ')}</dt><dd>${v}</dd>`).join('')+'</dl>';
+const ov=rt(document.createElement('div'));ov.className='ov';
+body.append(ctl,notesbar,ov,keypanel);
+
+/* ---------- 펜: 장마다 따로 그린다. 저장·인쇄에는 남지 않는다 ---------- */
+const PENS=[{c:'#e5383b',w:4,a:1,n:'빨강'},{c:'#2f6fb0',w:4,a:1,n:'파랑'},{c:'#3f7350',w:4,a:1,n:'초록'},{c:'#16264a',w:4,a:1,n:'네이비'},{c:'#ffd43b',w:22,a:.42,n:'형광펜'}];
+let pen=PENS[0];
+const guide=rt(document.createElement('div'));guide.className='safeguide';guide.innerHTML='<div class="sub-band"><span>자막 자리</span></div><div class="cam"><span>얼굴 캠</span></div>';deck.append(guide);
+const ink=rt(document.createElement('canvas'));ink.className='ink';
+const DPR=Math.max(2,window.devicePixelRatio||1);ink.width=W*DPR;ink.height=H*DPR;deck.append(ink);
+const ictx=ink.getContext('2d');ictx.scale(DPR,DPR);ictx.lineCap='round';ictx.lineJoin='round';
+const strokes={};let drawing=null;
+const hint=rt(document.createElement('div'));hint.className='inkhint';
+const laser=rt(document.createElement('div'));laser.className='laserdot';let lastXY=null;
+body.append(hint,laser);
+function setHint(){hint.innerHTML=`펜 <b>${pen.n}</b> · 1 빨강 2 파랑 3 초록 4 네이비 5 형광펜 · Z 되돌리기 · C 지우기 · D/Esc 끄기`;ctl.style.setProperty('--pc',pen.c)}
+function paint(st){const p=st.pts;if(!p.length)return;ictx.globalAlpha=st.a;ictx.strokeStyle=st.c;ictx.lineWidth=st.w;
+  const dk=['section','closing'].some(c=>slides[cur].classList.contains(c));ictx.globalCompositeOperation=st.a<1&&!dk?'multiply':'source-over';ictx.beginPath();ictx.moveTo(p[0][0],p[0][1]);
+  if(p.length===1)ictx.lineTo(p[0][0]+.1,p[0][1]);
+  for(let k=1;k<p.length-1;k++){const mx=(p[k][0]+p[k+1][0])/2,my=(p[k][1]+p[k+1][1])/2;ictx.quadraticCurveTo(p[k][0],p[k][1],mx,my)}
+  if(p.length>1)ictx.lineTo(p[p.length-1][0],p[p.length-1][1]);ictx.stroke();ictx.globalAlpha=1;ictx.globalCompositeOperation='source-over'}
+function redraw(){ictx.clearRect(0,0,W,H);(strokes[cur]||[]).forEach(paint);if(drawing)paint(drawing)}
+function pt(e){const r=ink.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]}
+ink.addEventListener('pointerdown',e=>{if(!body.classList.contains('pen'))return;e.preventDefault();try{ink.setPointerCapture(e.pointerId)}catch(_){}drawing={c:pen.c,w:pen.w,a:pen.a,pts:[pt(e)]};redraw()});
+ink.addEventListener('pointermove',e=>{if(!drawing)return;const q=pt(e),l=drawing.pts[drawing.pts.length-1];if(Math.hypot(q[0]-l[0],q[1]-l[1])<1.5)return;drawing.pts.push(q);redraw()});
+const endStroke=()=>{if(!drawing)return;(strokes[cur]=strokes[cur]||[]).push(drawing);drawing=null;redraw()};
+ink.addEventListener('pointerup',endStroke);ink.addEventListener('pointercancel',endStroke);
+function togglePen(on){const v=on===undefined?!body.classList.contains('pen'):on;body.classList.toggle('pen',v);if(v){body.classList.remove('laser-on');setHint()}}
+function placeLaser(){if(lastXY){laser.style.left=lastXY[0]+'px';laser.style.top=lastXY[1]+'px'}}
+function toggleLaser(on){const v=body.classList.toggle('laser-on',on);if(v){body.classList.remove('pen');placeLaser()}}
+addEventListener('pointermove',e=>{lastXY=[e.clientX,e.clientY];if(body.classList.contains('laser-on'))placeLaser()},{passive:true});
+document.addEventListener('pointerleave',()=>{laser.style.left='-100px'});
+setHint();
+
+function steps(s){return [...s.querySelectorAll('[data-step]')]}
+function go(i,revealAll){
+  i=Math.max(0,Math.min(N-1,i)); cur=i;
+  slides.forEach((s,k)=>{s.classList.toggle('on',k===i);s.classList.remove('enter')});
+  const s=slides[i];
+  steps(s).forEach(e=>e.classList.toggle('shown',!!revealAll));
+  if(!body.classList.contains('static')){void s.offsetWidth;s.classList.add('enter')}
+  ctl.querySelector('.cnt').textContent=`${pad(i+1)} / ${pad(N)}`;
+  const n=s.querySelector('.notes'); notesbar.innerHTML=n?n.innerHTML:'';
+  if(!mode.startsWith('check')&&!mode.startsWith('shot'))history.replaceState(null,'','#'+(i+1));
+  if(typeof redraw==='function'){drawing=null;redraw()}
+}
+function next(){
+  const hidden=steps(slides[cur]).filter(e=>!e.classList.contains('shown'));
+  if(hidden.length){const m=Math.min(...hidden.map(e=>+e.dataset.step||0));hidden.filter(e=>(+e.dataset.step||0)===m).forEach(e=>e.classList.add('shown'));return}
+  if(cur<N-1)go(cur+1,false);
+}
+function prev(){ if(cur>0)go(cur-1,true) }
+function toggle(c){body.classList.toggle(c);fit()}
+function full(){try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{})}catch(_){}}
+function grid(){
+  if(!ov.childElementCount){slides.forEach((s,k)=>{const t=document.createElement('div');t.className='th';const c=s.cloneNode(true);c.classList.add('on');c.classList.remove('enter');c.querySelectorAll('.notes').forEach(x=>x.remove());c.querySelectorAll('[data-step]').forEach(x=>x.classList.add('shown'));t.append(c);t.insertAdjacentHTML('beforeend',`<i>${pad(k+1)}</i>`);t.onclick=()=>{body.classList.remove('overview');go(k,true)};ov.append(t)})}
+  body.classList.toggle('overview');
+  [...ov.children].forEach((t,k)=>{t.classList.toggle('cur',k===cur);t.style.setProperty('--ts',t.clientWidth/W)});
+}
+function edit(){
+  const on=body.classList.toggle('editing');
+  deck.querySelectorAll('h1,h2,h3,p,li,td,th,span,b,em,blockquote,.say,.v,a').forEach(e=>{on?e.setAttribute('contenteditable','true'):e.removeAttribute('contenteditable')});
+}
+function save(){
+  const doc=document.documentElement.cloneNode(true);
+  doc.querySelectorAll('.cover h1,.section h2,.statement .say,.closing h2').forEach(e=>e.style.removeProperty('font-size'));
+  doc.querySelectorAll('[style=""]').forEach(e=>e.removeAttribute('style'));
+  doc.querySelectorAll('[data-rt]').forEach(e=>e.remove());
+  doc.querySelector('body').removeAttribute('class');
+  const d=doc.querySelector('.deck');d.removeAttribute('style');
+  doc.querySelectorAll('.slide').forEach(s=>s.classList.remove('on','enter'));
+  doc.querySelectorAll('[data-step]').forEach(e=>e.classList.remove('shown'));
+  doc.querySelectorAll('[contenteditable]').forEach(e=>e.removeAttribute('contenteditable'));
+  doc.querySelectorAll('[class=""]').forEach(e=>e.removeAttribute('class'));
+  const blob=new Blob(['<!DOCTYPE html>\n'+doc.outerHTML],{type:'text/html'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=decodeURIComponent(location.pathname.split('/').pop()||'slides.html');a.click();
+}
+ctl.addEventListener('click',e=>{const a=e.target.closest('button')?.dataset.a;({prev,next,notes:()=>toggle('show-notes'),grid,full,edit,pen:()=>togglePen(),laser:()=>toggleLaser(),help:()=>body.classList.toggle('keys-on')})[a]?.()});
+/* 단축키는 e.code(물리 키)로 판정한다 — 한글 입력 상태에서도 F·D·L 등이 먹게 */
+addEventListener('keydown',e=>{
+  const c=e.code,k=e.key,mod=e.ctrlKey||e.metaKey;
+  if(mod&&c==='KeyS'){e.preventDefault();save();return}
+  if(mod&&c==='KeyZ'&&body.classList.contains('pen')){e.preventDefault();(strokes[cur]||[]).pop();redraw();return}
+  if(body.classList.contains('editing')){ if(k==='PageDown')next(); if(k==='PageUp')prev(); if(k==='Escape')edit(); return }
+  if(mod||e.altKey)return;
+  if(k==='?'||c==='KeyH'){body.classList.toggle('keys-on');return}
+  if(c==='KeyE'){e.preventDefault();edit();return}
+  if(k==='Escape'&&body.classList.contains('keys-on')){body.classList.remove('keys-on');return}
+  if(body.classList.contains('pen')){
+    const d=/^(Digit|Numpad)([1-5])$/.exec(c); if(d){pen=PENS[+d[2]-1];setHint();return}
+    if(c==='KeyZ'){(strokes[cur]||[]).pop();redraw();e.preventDefault();return}
+    if(c==='KeyC'){strokes[cur]=[];redraw();return}
+    if(k==='Escape'||c==='KeyD'){togglePen(false);return}
+  }
+  if(c==='KeyD'){togglePen(true);return}
+  if(c==='KeyL'){toggleLaser();return}
+  if(c==='KeyV'){body.classList.toggle('guide-on');return}
+  if(k==='Escape'&&body.classList.contains('laser-on')){toggleLaser(false);return}
+  if(['ArrowRight','ArrowDown','PageDown','Enter'].includes(k)||c==='Space'){e.preventDefault();next()}
+  else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(k)){e.preventDefault();prev()}
+  else if(k==='Home')go(0,false); else if(k==='End')go(N-1,true);
+  else if(c==='KeyF'||k==='F5'){e.preventDefault();full()}
+  else if(c==='KeyN')toggle('show-notes');
+  else if(c==='KeyG'||(k==='Escape'&&body.classList.contains('overview')))grid();
+});
+/* 전체화면: F·F5·버튼·슬라이드 더블클릭. 들어가고 나올 때 버튼 글자와 배율을 맞춘다 */
+deck.addEventListener('dblclick',e=>{if(!body.classList.contains('pen')&&!body.classList.contains('editing')){e.preventDefault();full()}});
+document.addEventListener('fullscreenchange',()=>{const b=ctl.querySelector('[data-a="full"]');b.querySelector('.lb').textContent=document.fullscreenElement?'전체화면 종료':'전체화면';fit()});
+let tx=null;addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
+addEventListener('touchend',e=>{if(tx===null||body.classList.contains('pen')){tx=null;return}const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)d<0?next():prev();tx=null});
+let idleT;const wake=()=>{body.classList.remove('idle');clearTimeout(idleT);idleT=setTimeout(()=>{if(!body.classList.contains('editing'))body.classList.add('idle')},2200)};
+addEventListener('mousemove',wake);addEventListener('resize',fit);
+
+/* ---------- 검사 모드(#check): check.py 가 읽는다 ---------- */
+function lines(el){
+  const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT),rg=document.createRange(),out=[];let bot=null,n;
+  while(n=w.nextNode()){const t=n.textContent;for(let k=0;k<t.length;k++){if(/\s/.test(t[k]))continue;rg.setStart(n,k);rg.setEnd(n,k+1);const r=rg.getBoundingClientRect();if(!r.height)continue;const mid=(r.top+r.bottom)/2;if(bot===null||mid>bot){out.push('');bot=r.bottom}else bot=Math.max(bot,r.bottom);out[out.length-1]+=t[k]}}
+  return out;
+}
+const snip=e=>(e.textContent||'').replace(/\s+/g,' ').trim().slice(0,28);
+function audit(s,i){
+  const R=s.getBoundingClientRect(),iss=[],add=(sev,type,msg)=>iss.push({sev,type,msg});
+  const pb=parseFloat(getComputedStyle(s).paddingBottom)||72, floor=R.bottom-Math.max(pb-18,30);
+  const rs=getComputedStyle(document.documentElement),cv=n=>parseFloat(rs.getPropertyValue(n))||0,cl=cv('--cam-l'),ct=cv('--cam-t'),cd=cv('--cam-d');
+  const video=body.dataset.video==='on', cam={l:R.left+cl-20,t:R.top+ct-20,r:R.left+cl+cd+20,b:R.top+ct+cd+20};
+  const els=[...s.querySelectorAll('*')].filter(e=>!e.closest('.foot,.notes'));
+  const seen=new Set();
+  for(const e of els){
+    const r=e.getBoundingClientRect(); if(!r.width||!r.height)continue;
+    const leaf=[...e.childNodes].some(c=>c.nodeType===3&&c.textContent.trim())||['IMG','SVG','svg'].includes(e.tagName);
+    if(!leaf)continue;
+    if(r.bottom>floor+1){const k='v'+snip(e);if(!seen.has(k)){seen.add(k);add('error','넘침',`아래로 ${Math.round(r.bottom-floor)}px 넘침: "${snip(e)}"`)}}
+    if(video){const rg=document.createRange();let hit=false;[...e.childNodes].filter(c=>c.nodeType===3&&c.textContent.trim()).forEach(c=>{rg.selectNodeContents(c);[...rg.getClientRects()].forEach(q=>{if(q.right>cam.l&&q.bottom>cam.t&&q.left<cam.r&&q.top<cam.b)hit=true})});
+      if(hit){const k='c'+snip(e);if(!seen.has(k)){seen.add(k);add('warn','얼굴 캠 영역',`오른쪽 아래 캠 자리에 글자가 걸침: "${snip(e)}"`)}}}
+    if(r.right>R.right-40+1){const k='h'+snip(e);if(!seen.has(k)){seen.add(k);add('error','가로 넘침',`오른쪽으로 ${Math.round(r.right-(R.right-40))}px: "${snip(e)}"`)}}
+  }
+  s.querySelectorAll('.eyebrow,.badge,.k,.tag,.n,.part,.btn,.fix b,th,.fact .v,.meta>div').forEach(e=>{if(lines(e).length>1)add('error','라벨 두 줄',`한 줄이어야 할 라벨이 두 줄: "${snip(e)}"`)});
+  s.querySelectorAll(KEY).forEach(e=>{
+    if(lines(e).length>1)add('error','핵심 메시지 줄바꿈',`한 줄이어야 함: "${snip(e)}"`);
+    if(e.scrollWidth>1121)add('error','핵심 메시지 폭',`최소 크기로도 한 줄에 안 들어감 — 문구를 줄일 것: "${snip(e)}"`);
+    if(e.querySelector('br'))add('error','핵심 메시지 줄바꿈',`<br> 을 쓰지 않는다: "${snip(e)}"`);
+  });
+  s.querySelectorAll('.head h2,.split .say').forEach(e=>{
+    const L=lines(e),max=e.classList.contains('say')?4:2;
+    if(L.length>max)add('error','제목 줄 수',`${L.length}줄(최대 ${max}): "${snip(e)}"`);
+    if(L.length>1&&L[L.length-1].replace(/[.,?!”"'’)]/g,'').length<4)add('warn','짧은 끝줄',`끝줄 "${L[L.length-1]}" 이 너무 짧음`);
+  });
+  const b=s.querySelector('.body');
+  if(b&&b.children.length){
+    const BR=b.getBoundingClientRect();let t=1e9,bt=-1e9,l=1e9,rr=-1e9;
+    [...b.children].forEach(c=>{const r=c.getBoundingClientRect();t=Math.min(t,r.top);bt=Math.max(bt,r.bottom);l=Math.min(l,r.left);rr=Math.max(rr,r.right)});
+    const fill=(bt-t)/Math.max(1,BR.height-26), wfill=(rr-l)/BR.width;
+    if(fill<.42)add('warn','빈 공간',`본문이 남은 높이의 ${Math.round(fill*100)}%만 채움 — 내용을 보태거나 다른 장과 합칠 것`);
+    if(wfill<.6)add('warn','빈 공간',`본문 폭 ${Math.round(wfill*100)}% — 오른쪽이 비어 보임`);
+  }
+  if(s.innerHTML.includes('{{'))add('error','미치환',`{{...}} 가 남아 있음`);
+  if(!s.querySelector('.notes'))add('info','노트 없음','발표 노트(aside.notes)가 없음');
+  const kind=['cover','section','statement','closing'].find(c=>s.classList.contains(c))||'body';
+  const ttl=s.querySelector('.head h2,h1,.section h2,.closing h2,.say');
+  return {i:i+1,kind,title:ttl?snip(ttl):'',full:ttl?ttl.innerText.replace(/\s+/g,' ').trim():'',issues:iss};
+}
+async function runCheck(){
+  body.classList.add('static','all'); deck.style.setProperty('--s',1); deck.style.top='360px'; deck.style.left='640px';
+  try{await document.fonts.ready}catch(e){}
+  fitKeys();
+  const res=slides.map((s,i)=>{go(i,true);return audit(s,i)});
+  const out={n:N,deckTitle:document.title,fontOk:document.fonts.check('700 16px Pretendard'),titles:res.map(r=>r.full),slides:res};
+  const pre=rt(document.createElement('pre'));pre.id='kcheck';pre.textContent=JSON.stringify(out);body.append(pre);
+}
+
+if(mode==='check'){runCheck()}
+else if(mode.startsWith('shot-')){body.classList.add('static','all','idle');ctl.style.display='none';deck.style.setProperty('--s',1);deck.style.top='360px';deck.style.left='640px';go((+mode.slice(5)||1)-1,true)}
+else{fit();go((+mode||1)-1,false);wake();const t=rt(document.createElement('div'));t.className='inkhint starthint';t.innerHTML='<b>F</b> 전체화면 · <b>D</b> 펜 · <b>L</b> 레이저 · <b>N</b> 노트 · <b>G</b> 전체 보기 · <b>?</b> 단축키 전체';body.append(t);setTimeout(()=>t.remove(),4000)}
+})();
+</script>
+</body>
+</html>
